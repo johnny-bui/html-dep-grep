@@ -1,6 +1,6 @@
 {
   "name": "html-dep-grep",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "grep script- and css- dependencies of html to groups",
   "license": "MIT",
   "keywords": [
@@ -9,6 +9,9 @@
     "server"
   ],
   "author": "Felix",
+	"bin":{
+		"html-dev-grep": "./index.js"
+	},
   "contributors": [],
   "dependencies": {
     "htmlparser2": "^3.9.2"
@@ -19,6 +22,6 @@
     "rewire": "^2.5.2"
   },
   "scripts": {
-    "start": "node main.js"
+    "start": "node index.js"
   }
 }
