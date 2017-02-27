@@ -9,11 +9,12 @@
     "server"
   ],
   "author": "Felix",
-	"bin":{
-		"html-dev-grep": "./index.js"
-	},
+  "bin": {
+    "html-dev-grep": "./index.js"
+  },
   "contributors": [],
   "dependencies": {
+    "commander": "^2.9.0",
     "htmlparser2": "^3.9.2"
   },
   "devDependencies": {
