@@ -5,7 +5,7 @@ const htmlparser = require("htmlparser2");
 
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
 const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
-const GLOBAL_NAME = "__global";
+
 
 module.exports = {
 	
@@ -26,9 +26,7 @@ module.exports = {
 	groupScriptFile: function (fileName, done, error, opt) {
 		var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
 						: GROUP_INDICATOR;
-		var groups = [
-			/*{"name":"__global", html:""}*/
-		];
+		var groups = [];
 		var currentBlock = "";
 		var readingLine = 0;
 		var inAGroup = false;
