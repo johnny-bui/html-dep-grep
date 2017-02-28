@@ -10,8 +10,6 @@ var fileName = null;
 program
 	.version('0.0.1')
 	.arguments('<file>')
-	//.option('-u, --username <username>', 'The user to authenticate as')
-	//.option('-p, --password <password>', 'The user\'s password')
 	.action(function(file) {
 		console.log('file: %s', file);
 		fileName = file;

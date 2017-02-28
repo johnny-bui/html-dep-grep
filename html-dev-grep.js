@@ -4,7 +4,7 @@ const path = require('path');
 const htmlparser = require("htmlparser2");
 
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
-const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/
+const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
 const GLOBAL_NAME = "__global";
 
 module.exports = {
@@ -20,27 +20,34 @@ module.exports = {
 	 *   'startLine': <line>, 'endLine': <line>,
 	 *   'html': <html>
 	 *	}, .... ]`
-	 *	
+	 * @param {function} error a callback function to handel error by reading file 
 	 * @param {object} opt (TODO: document)
 	 */
-	groupScriptFile: function (fileName, done, opt) {
+	groupScriptFile: function (fileName, done, error, opt) {
 		var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
 						: GROUP_INDICATOR;
 		var groups = [
-			{"name":"__global", html:""}
+			/*{"name":"__global", html:""}*/
 		];
 		var currentBlock = "";
 		var readingLine = 0;
 		var inAGroup = false;
 		if (fs.existsSync(fileName) && fs.statSync(fileName).isFile() ) {
+			const stream = fs.createReadStream(fileName);
 			const rl = readline.createInterface({
-				input: fs.createReadStream(fileName)
+				input: stream
 			});
 
 			rl.on('line', function(line) {
 				var trimedLine = line.trim();
 				++readingLine;
 				if (trimedLine.match(groupIndicator)){// start a new group
+					if (inAGroup){
+						rl.close();//Stop reading
+						if (typeof error === 'function'){
+							error( new Error(`${readingLine}: group not match`) );
+						}
+					}
 					inAGroup = true;
 					var groupName = groupIndicator.exec(trimedLine)[1];
 					startNewGroup(groups, groupName, readingLine);
@@ -55,9 +62,10 @@ module.exports = {
 
 			rl.on('close', function(){
 				if(typeof done === "function"){
-					done(groups);
+					return done(groups);
 				}
 			});
+			
 		}else {
 			throw new Error(`Cannot find path ${fileName} or it is not a file`);
 		}
@@ -71,6 +79,7 @@ module.exports = {
 };
 
 var startNewGroup = function(groups, groupName, startLine){
+	/*
 	var lastGroup = groups.length > 0 
 						? groups[groups.length-1] 
 						: undefined ;
@@ -78,8 +87,9 @@ var startNewGroup = function(groups, groupName, startLine){
 		console.log(`group ${lastGroup.name} is empty, remove it!`);
 		groups.pop();	
 	}
+	*/
 	
-	lastGroup = {'name':groupName, statLine:startLine, html:''};
+	var lastGroup = {'name':groupName, statLine:startLine, html:''};
 	console.log(`create new group named ${lastGroup.name}`);
 	groups.push(lastGroup);
 	return groups;
@@ -87,8 +97,12 @@ var startNewGroup = function(groups, groupName, startLine){
 
 var setHtmlBlock = function(groups, html, endLine){
 	var lastGroup = groups[groups.length-1] ;
-	lastGroup['endLine'] = endLine;
-	lastGroup['html'] = html;
+	if (html.length > 0){
+		lastGroup['endLine'] = endLine;
+		lastGroup['html'] = html;
+	}else{
+		groups.pop();
+	}
 	return groups;
 };
 
@@ -105,19 +119,17 @@ var parseSnippet = function(g,fileName){
 	g['css'] = [];
 	var parser = new htmlparser.Parser({
     onopentag: function(name, attribs){
-        if(name === "script" && attribs.src){
-            g['js'].push( path.resolve(parentDir, attribs.src) );
-        }else if (name === 'link' 
-								&& attribs.rel === 'stylesheet' 
-								&& attribs.href ){
-					g['css'].push( path.resolve(parentDir, attribs.href) );
-				}
-    },
-    ontext: function(text){
-        
+			if(name === "script" && attribs.src){
+					g['js'].push( path.resolve(parentDir, attribs.src) );
+			}	
+			if (name === 'link' 
+							&& attribs.rel === 'stylesheet' 
+							&& attribs.href ){
+				g['css'].push( path.resolve(parentDir, attribs.href) );
+			}
     },
     onclosetag: function(tagname){
-        
+        //Nothing to do
     }
 		}, {decodeEntities: true}
 	);
