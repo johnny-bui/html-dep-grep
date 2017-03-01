@@ -86,15 +86,8 @@ module.exports.grepDepFile = function (fileName, done, error, opt) {
  * */
 module.exports.grepDepFileSync = function (fileName, opt) {
 	var effectivOption = pickupOption(opt);
-	//var groupIndicator = effectivOption.token;
-	//var endGroupIndicator = effectivOption.endToken;
 	var encoding = effectivOption.encoding;
-
-	/*var groups = [];
-	var currentBlock = "";
-	var readingLine = 0;
-	var inAGroup = false;
-	*/
+	
 	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
 		//var line = null;
 		//var readingLine = 0;
@@ -140,7 +133,7 @@ var LineConsumer = function (opt) {
 };
 
 LineConsumer.prototype.consumeLine = function (line) {
-	var trimedLine = line.toString(this.opt.encoding).trim();//asume encoding is utf-8
+	var trimedLine = line.trim();//assume default encoding is utf-8
 	++this.readingLine;
 	if (trimedLine.match(this.opt.token)) {// start a new group
 		if (this.inAGroup) {
