@@ -1,2 +1,4 @@
 /coverage/
 /gen-doc/
+/node_modules/
+/nbproject/private/
