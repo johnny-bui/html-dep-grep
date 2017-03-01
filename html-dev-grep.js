@@ -118,7 +118,9 @@ var startNewGroup = function (groups, groupName, startLine) {
 
 /**
  * @private
- * 
+ * @param {object} groups 
+ * @param {string} html
+ * @param {integer} endLine  
  * */
 var setHtmlBlock = function (groups, html, endLine) {
 	var lastGroup = groups[groups.length - 1];

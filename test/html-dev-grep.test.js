@@ -93,7 +93,7 @@ describe('#grepTag', function() {
 		
     var fileName = "test/test.html";
 		var done = function(groups){
-			htmlGrep.grepTag(fileName, groups);
+			htmlGrep.resolvePath(fileName, groups);
 			var gLink = groups[0];
 			const linkLength = 1;
 			if(gLink.css.length === linkLength){

@@ -19,4 +19,4 @@ html-dep-grep <file.html>
 
 //TODO see check `index.js` to know how to use.
 
-[github](https://github.com/johnny-bui/html-dep-grep)
+[github https://github.com/johnny-bui/html-dep-grep](https://github.com/johnny-bui/html-dep-grep)
