@@ -10,6 +10,8 @@ const lazy = require('lazy');
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
 const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
 
+
+
 /**
  * The default indicator to recognize the begin of a group.
  * <code></code>
@@ -43,10 +45,10 @@ module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
  * @param {object} opt optinal argument, default is an undefined object (TODO: document).
  */
 module.exports.grepDepFile = function (fileName, done, error, opt) {
-	var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
-					: GROUP_INDICATOR;
-	var endGroupIndicator = opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
-					: END_GROUP_INDICATOR;
+	var effectivOption = pickupOption(opt);
+	var groupIndicator = effectivOption.token;
+	var endGroupIndicator = effectivOption.endToken;
+	
 	var groups = [];
 	var currentBlock = "";
 	var readingLine = 0;
@@ -103,12 +105,11 @@ module.exports.grepDepFile = function (fileName, done, error, opt) {
  * }</code></pre>
  * */
 module.exports.grepDepFileSync = function (fileName, opt) {
-	var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
-					: GROUP_INDICATOR;
-	var endGroupIndicator = opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
-					: END_GROUP_INDICATOR;
-	var encoding = opt ? (opt.encoding ? opt.encoding : 'utf-8')
-					: 'utf-8';
+	var effectivOption = pickupOption(opt);
+	var groupIndicator = effectivOption.token;
+	var endGroupIndicator = effectivOption.endToken;
+	var encoding = effectivOption.encoding;
+	
 	var groups = [];
 	var currentBlock = "";
 	var readingLine = 0;
@@ -162,6 +163,20 @@ module.exports.resolvePath = function (fileName, groups) {
 	}
 	return groups;//for chain-call
 };
+
+
+
+var pickupOption = function(opt){
+	return {
+		token : (opt ? (opt.token ? opt.token : GROUP_INDICATOR)
+						: GROUP_INDICATOR),
+		endToken : (opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
+								: END_GROUP_INDICATOR),
+		encoding : (opt ? (opt.encoding ? opt.encoding : 'utf-8')
+								: 'utf-8')
+	};
+};
+
 
 /**
  * @private
