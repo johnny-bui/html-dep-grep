@@ -45,45 +45,25 @@ module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
  * @param {object} opt optinal argument, default is an undefined object (TODO: document).
  */
 module.exports.grepDepFile = function (fileName, done, error, opt) {
-	var effectivOption = pickupOption(opt);
-	var groupIndicator = effectivOption.token;
-	var endGroupIndicator = effectivOption.endToken;
-	
-	var groups = [];
-	var currentBlock = "";
-	var readingLine = 0;
-	var inAGroup = false;
+
 	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
 		const stream = fs.createReadStream(fileName);
 		const rl = readline.createInterface({
 			input: stream
 		});
-
+		var consumer = new LineConsumer(opt);
 		rl.on('line', function (line) {
-			var trimedLine = line.trim();
-			++readingLine;
-			if (trimedLine.match(groupIndicator)) {// start a new group
-				if (inAGroup) {
-					rl.close();//Stop reading
-					if (typeof error === 'function') {
-						error(new Error(`${readingLine}: group not match`));
-					}
-				}
-				inAGroup = true;
-				var groupName = groupIndicator.exec(trimedLine)[1];
-				startNewGroup(groups, groupName, readingLine);
-			} else if (trimedLine.match(endGroupIndicator) && inAGroup) {
-				inAGroup = false;
-				setHtmlBlock(groups, currentBlock, readingLine);
-				currentBlock = "";
-			} else if (inAGroup) {
-				currentBlock += trimedLine;
+			try{
+				consumer.consumeLine(line);
+			}catch(ex){
+				rl.close();
+				error(ex);
 			}
 		});
 
 		rl.on('close', function () {
 			if (typeof done === "function") {
-				return done(groups);
+				return done(consumer.groups);
 			}
 		});
 
@@ -106,38 +86,25 @@ module.exports.grepDepFile = function (fileName, done, error, opt) {
  * */
 module.exports.grepDepFileSync = function (fileName, opt) {
 	var effectivOption = pickupOption(opt);
-	var groupIndicator = effectivOption.token;
-	var endGroupIndicator = effectivOption.endToken;
+	//var groupIndicator = effectivOption.token;
+	//var endGroupIndicator = effectivOption.endToken;
 	var encoding = effectivOption.encoding;
-	
-	var groups = [];
+
+	/*var groups = [];
 	var currentBlock = "";
 	var readingLine = 0;
 	var inAGroup = false;
-
+	*/
 	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
-		var line = null;
-		var readingLine = 0;
+		//var line = null;
+		//var readingLine = 0;
 		var liner = new LineByLine(fileName);
-		while ( (line = liner.next()) && line ) {
-			var trimedLine = line.toString(encoding).trim();//asume encoding is utf-8
-			++readingLine;
-			if (trimedLine.match(groupIndicator)) {// start a new group
-				if (inAGroup) {
-					throw new Error(`${readingLine}: group not match`);
-				}
-				inAGroup = true;
-				var groupName = groupIndicator.exec(trimedLine)[1];
-				startNewGroup(groups, groupName, readingLine);
-			} else if (trimedLine.match(endGroupIndicator) && inAGroup) {
-				inAGroup = false;
-				setHtmlBlock(groups, currentBlock, readingLine);
-				currentBlock = "";
-			} else if (inAGroup) {
-				currentBlock += trimedLine;
-			}
+		var consumer = new LineConsumer(opt);
+		while ((line = liner.next()) && line) {
+			var strLine = line.toString(encoding);//asume encoding is utf-8 by default
+			consumer.consumeLine(strLine);
 		}
-		return groups;
+		return consumer.groups;
 	} else {
 		throw new Error(`Cannot find path ${fileName} or it is not a file`);
 	}
@@ -164,16 +131,41 @@ module.exports.resolvePath = function (fileName, groups) {
 	return groups;//for chain-call
 };
 
+var LineConsumer = function (opt) {
+	this.groups = [];
+	this.currentBlock = "";
+	this.readingLine = 0;
+	this.inAGroup = false;
+	this.opt = pickupOption(opt);
+};
 
+LineConsumer.prototype.consumeLine = function (line) {
+	var trimedLine = line.toString(this.opt.encoding).trim();//asume encoding is utf-8
+	++this.readingLine;
+	if (trimedLine.match(this.opt.token)) {// start a new group
+		if (this.inAGroup) {
+			throw new Error(`${this.readingLine}: group not match`);
+		}
+		this.inAGroup = true;
+		var groupName = this.opt.token.exec(trimedLine)[1];
+		startNewGroup(this.groups, groupName, this.readingLine);
+	} else if (trimedLine.match(this.opt.endToken) && this.inAGroup) {
+		this.inAGroup = false;
+		setHtmlBlock(this.groups, this.currentBlock, this.readingLine);
+		this.currentBlock = "";
+	} else if (this.inAGroup) {
+		this.currentBlock += trimedLine;
+	}
+};
 
-var pickupOption = function(opt){
+var pickupOption = function (opt) {
 	return {
-		token : (opt ? (opt.token ? opt.token : GROUP_INDICATOR)
+		token: (opt ? (opt.token ? opt.token : GROUP_INDICATOR)
 						: GROUP_INDICATOR),
-		endToken : (opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
-								: END_GROUP_INDICATOR),
-		encoding : (opt ? (opt.encoding ? opt.encoding : 'utf-8')
-								: 'utf-8')
+		endToken: (opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
+						: END_GROUP_INDICATOR),
+		encoding: (opt ? (opt.encoding ? opt.encoding : 'utf-8')
+						: 'utf-8')
 	};
 };
 
