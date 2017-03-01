@@ -93,7 +93,8 @@ module.exports.groupScriptFile = function (fileName, done, error, opt) {
  * @param {array} groups an array of Element like 
  * <pre><code>{"name":"the group name", 
  * "startLine": startLine, "endLine": endLine,
- * "html": "html code snippet, only script and link tag are recognized"}</code></pre>
+ * "html": "html code snippet, only script and link tag are recognized"}</code>
+ * </pre>
  * */
 module.exports.resolvePath = function (fileName, groups) {
 	for (i = 0; i < groups.length; ++i) {
