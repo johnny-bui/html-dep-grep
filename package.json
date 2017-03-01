@@ -1,6 +1,6 @@
 {
   "name": "html-dep-grep",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "grep script- and css- dependencies of html to groups",
   "license": "MIT",
   "keywords": [
