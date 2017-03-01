@@ -1,22 +1,24 @@
 {
   "name": "html-dep-grep",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "grep script- and css- dependencies of html to groups",
   "license": "MIT",
   "keywords": [
     "util",
-    "functional",
-    "server"
+    "functional"
   ],
-  "author": "Felix",
+  "author": "Johnny Bui",
   "bin": {
     "html-dev-grep": "./index.js"
   },
+  "repository": "https://github.com/johnny-bui/html-dep-grep",
   "contributors": [],
   "dependencies": {
     "commander": "^2.9.0",
     "htmlparser2": "^3.9.2",
-    "istanbul": "^0.4.5"
+    "istanbul": "^0.4.5",
+    "lazy": "^1.0.11",
+    "n-readlines": "^0.2.7"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -25,7 +27,7 @@
   },
   "scripts": {
     "start": "node index.js",
-		"test" : "istanbul cover _mocha",
-		"doc" : "jsdoc *.js --destination gen-doc"
+    "test": "istanbul cover _mocha",
+    "doc": "jsdoc *.js --destination gen-doc"
   }
 }

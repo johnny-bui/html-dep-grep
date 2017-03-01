@@ -3,6 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const htmlparser = require("htmlparser2");
 
+var LineByLine = require('n-readlines');//for reading big file
+
+const lazy = require('lazy');
+
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
 const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
 
@@ -38,9 +42,11 @@ module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
  * function. 
  * @param {object} opt optinal argument, default is an undefined object (TODO: document).
  */
-module.exports.groupScriptFile = function (fileName, done, error, opt) {
+module.exports.grepDepFile = function (fileName, done, error, opt) {
 	var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
 					: GROUP_INDICATOR;
+	var endGroupIndicator = opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
+					: END_GROUP_INDICATOR;
 	var groups = [];
 	var currentBlock = "";
 	var readingLine = 0;
@@ -64,7 +70,7 @@ module.exports.groupScriptFile = function (fileName, done, error, opt) {
 				inAGroup = true;
 				var groupName = groupIndicator.exec(trimedLine)[1];
 				startNewGroup(groups, groupName, readingLine);
-			} else if (trimedLine.match(END_GROUP_INDICATOR) && inAGroup) {
+			} else if (trimedLine.match(endGroupIndicator) && inAGroup) {
 				inAGroup = false;
 				setHtmlBlock(groups, currentBlock, readingLine);
 				currentBlock = "";
@@ -83,6 +89,59 @@ module.exports.groupScriptFile = function (fileName, done, error, opt) {
 		throw new Error(`Cannot find path ${fileName} or it is not a file`);
 	}
 };
+
+/**
+ * Synchrone Version of @link #grepDepFile.
+ * @param {string} fileName the file name
+ * @param {object} opt option.
+ * @returns {array} the array of group, each element is an object like
+ * <pre></code>{
+ *    "name": groupName,
+ *    "startLine": startLine,
+ *    "endLine": endLine,
+ *    "html": html
+ * }</code></pre>
+ * */
+module.exports.grepDepFileSync = function (fileName, opt) {
+	var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
+					: GROUP_INDICATOR;
+	var endGroupIndicator = opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
+					: END_GROUP_INDICATOR;
+	var encoding = opt ? (opt.encoding ? opt.encoding : 'utf-8')
+					: 'utf-8';
+	var groups = [];
+	var currentBlock = "";
+	var readingLine = 0;
+	var inAGroup = false;
+
+	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
+		var line = null;
+		var readingLine = 0;
+		var liner = new LineByLine(fileName);
+		while ( (line = liner.next()) && line ) {
+			var trimedLine = line.toString(encoding).trim();//asume encoding is utf-8
+			++readingLine;
+			if (trimedLine.match(groupIndicator)) {// start a new group
+				if (inAGroup) {
+					throw new Error(`${readingLine}: group not match`);
+				}
+				inAGroup = true;
+				var groupName = groupIndicator.exec(trimedLine)[1];
+				startNewGroup(groups, groupName, readingLine);
+			} else if (trimedLine.match(endGroupIndicator) && inAGroup) {
+				inAGroup = false;
+				setHtmlBlock(groups, currentBlock, readingLine);
+				currentBlock = "";
+			} else if (inAGroup) {
+				currentBlock += trimedLine;
+			}
+		}
+		return groups;
+	} else {
+		throw new Error(`Cannot find path ${fileName} or it is not a file`);
+	}
+};
+
 
 /**
  * resolve path of files in each group, this function creates for each
@@ -166,4 +225,6 @@ var parseSnippet = function (g, fileName) {
 	parser.end();
 	return g;
 };
+
+
 
