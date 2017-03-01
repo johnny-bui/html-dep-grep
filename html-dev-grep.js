@@ -6,99 +6,113 @@ const htmlparser = require("htmlparser2");
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
 const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
 
+/**
+ * The default indicator to recognize the begin of a group.
+ * <code></code>
+ * @constant
+ * @type {RegExp}
+ * @default <code>/&lt;!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*--&gt;/</code>
+ * */
+module.exports.GROUP_INDICATOR = GROUP_INDICATOR;
 
-module.exports = {
-	
-	GROUP_INDICATOR: GROUP_INDICATOR,
-	END_GROUP_INDICATOR : END_GROUP_INDICATOR,
-	/**
-	 * @param {string} fileName 
-	 * @param {function} done function with one argument, which is 
-	 * called after parsing the html file finish. The arugment of the function is an
-	 * object like 
-	 * `[{'name': <given name>,
-	 *   'startLine': <line>, 'endLine': <line>,
-	 *   'html': <html>
-	 *	}, .... ]`
-	 * @param {function} error a callback function to handel error by reading file 
-	 * @param {object} opt (TODO: document)
-	 */
-	groupScriptFile: function (fileName, done, error, opt) {
-		var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
-						: GROUP_INDICATOR;
-		var groups = [];
-		var currentBlock = "";
-		var readingLine = 0;
-		var inAGroup = false;
-		if (fs.existsSync(fileName) && fs.statSync(fileName).isFile() ) {
-			const stream = fs.createReadStream(fileName);
-			const rl = readline.createInterface({
-				input: stream
-			});
+/**
+ * The default indicator to recognize the end of a group.
+ * @constant
+ * @type {RegExp}
+ * @default <pre>/<!--\s*\/group\s*-->/</pre>
+ * */
+module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
 
-			rl.on('line', function(line) {
-				var trimedLine = line.trim();
-				++readingLine;
-				if (trimedLine.match(groupIndicator)){// start a new group
-					if (inAGroup){
-						rl.close();//Stop reading
-						if (typeof error === 'function'){
-							error( new Error(`${readingLine}: group not match`) );
-						}
+/**
+ * @param {string} fileName 
+ * @param {function} done function with one argument, which is 
+ * called after parsing the html file finishes. The arugment of the function is an
+ * object like:
+ * <pre><code>[{'name': <given name>,
+ *   'startLine': <line>, 'endLine': <line>,
+ *   'html': <html>
+ *	}, .... ]</code></pre>
+ *	Write your own function to handle the group.
+ * @param {function} error a callback function to handel error by reading file. It 
+ * is a function expecting only one argument als error message. Write your own
+ * function. 
+ * @param {object} opt optinal argument, default is an undefined object (TODO: document).
+ */
+module.exports.groupScriptFile = function (fileName, done, error, opt) {
+	var groupIndicator = opt ? (opt.token ? opt.token : GROUP_INDICATOR)
+					: GROUP_INDICATOR;
+	var groups = [];
+	var currentBlock = "";
+	var readingLine = 0;
+	var inAGroup = false;
+	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
+		const stream = fs.createReadStream(fileName);
+		const rl = readline.createInterface({
+			input: stream
+		});
+
+		rl.on('line', function (line) {
+			var trimedLine = line.trim();
+			++readingLine;
+			if (trimedLine.match(groupIndicator)) {// start a new group
+				if (inAGroup) {
+					rl.close();//Stop reading
+					if (typeof error === 'function') {
+						error(new Error(`${readingLine}: group not match`));
 					}
-					inAGroup = true;
-					var groupName = groupIndicator.exec(trimedLine)[1];
-					startNewGroup(groups, groupName, readingLine);
-				}else if( trimedLine.match(END_GROUP_INDICATOR) && inAGroup ){
-					inAGroup = false;
-					setHtmlBlock(groups, currentBlock, readingLine);
-					currentBlock = "";
-				}else if (inAGroup){
-					currentBlock += trimedLine;
 				}
-			});
+				inAGroup = true;
+				var groupName = groupIndicator.exec(trimedLine)[1];
+				startNewGroup(groups, groupName, readingLine);
+			} else if (trimedLine.match(END_GROUP_INDICATOR) && inAGroup) {
+				inAGroup = false;
+				setHtmlBlock(groups, currentBlock, readingLine);
+				currentBlock = "";
+			} else if (inAGroup) {
+				currentBlock += trimedLine;
+			}
+		});
 
-			rl.on('close', function(){
-				if(typeof done === "function"){
-					return done(groups);
-				}
-			});
-			
-		}else {
-			throw new Error(`Cannot find path ${fileName} or it is not a file`);
-		}
-	},
-	'grepTag': function(fileName, groups){
-			for (i = 0; i < groups.length; ++i){
-			g = groups[i];
-			parseSnippet(g, fileName);
-		}
+		rl.on('close', function () {
+			if (typeof done === "function") {
+				return done(groups);
+			}
+		});
+
+	} else {
+		throw new Error(`Cannot find path ${fileName} or it is not a file`);
 	}
 };
 
-var startNewGroup = function(groups, groupName, startLine){
-	/*
-	var lastGroup = groups.length > 0 
-						? groups[groups.length-1] 
-						: undefined ;
-	if (lastGroup && lastGroup["html"].length === 0){
-		console.log(`group ${lastGroup.name} is empty, remove it!`);
-		groups.pop();	
+/**
+ * 
+ * */
+module.exports.grepTag = function (fileName, groups) {
+	for (i = 0; i < groups.length; ++i) {
+		g = groups[i];
+		parseSnippet(g, fileName);
 	}
-	*/
-	
-	var lastGroup = {'name':groupName, statLine:startLine, html:''};
+};
+
+/**
+ * @private
+ * */
+var startNewGroup = function (groups, groupName, startLine) {
+	var lastGroup = {'name': groupName, statLine: startLine, html: ''};
 	console.log(`create new group named ${lastGroup.name}`);
 	groups.push(lastGroup);
 	return groups;
 };
 
-var setHtmlBlock = function(groups, html, endLine){
-	var lastGroup = groups[groups.length-1] ;
-	if (html.length > 0){
+/**
+ * @private
+ * */
+var setHtmlBlock = function (groups, html, endLine) {
+	var lastGroup = groups[groups.length - 1];
+	if (html.length > 0) {
 		lastGroup['endLine'] = endLine;
 		lastGroup['html'] = html;
-	}else{
+	} else {
 		groups.pop();
 	}
 	return groups;
@@ -106,30 +120,31 @@ var setHtmlBlock = function(groups, html, endLine){
 
 
 /**
+ * @private
  * @param {object} g an Object like 
- * {'name':'sowieso','html':'html code', 
- * 'startLine':<int>, 'endLine':'<int>'}
+ * <pre><code>{'name':'sowieso','html':'html code', 
+ * 'startLine':<int>, 'endLine':'<int>'}</code></pre>
  * @param {string} fileName the html filename 
  * */
-var parseSnippet = function(g,fileName){
+var parseSnippet = function (g, fileName) {
 	const parentDir = path.dirname(fileName);
 	g['js'] = [];
 	g['css'] = [];
 	var parser = new htmlparser.Parser({
-    onopentag: function(name, attribs){
-			if(name === "script" && attribs.src){
-					g['js'].push( path.resolve(parentDir, attribs.src) );
-			}	
-			if (name === 'link' 
-							&& attribs.rel === 'stylesheet' 
-							&& attribs.href ){
-				g['css'].push( path.resolve(parentDir, attribs.href) );
+		onopentag: function (name, attribs) {
+			if (name === "script" && attribs.src) {
+				g['js'].push(path.resolve(parentDir, attribs.src));
 			}
-    },
-    onclosetag: function(tagname){
-        //Nothing to do
-    }
-		}, {decodeEntities: true}
+			if (name === 'link'
+							&& attribs.rel === 'stylesheet'
+							&& attribs.href) {
+				g['css'].push(path.resolve(parentDir, attribs.href));
+			}
+		},
+		onclosetag: function (tagname) {
+			//Nothing to do
+		}
+	}, {decodeEntities: true}
 	);
 	parser.write(g['html']);
 	parser.end();

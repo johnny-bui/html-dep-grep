@@ -1,4 +1,4 @@
-### html-dev-grep
+# html-dev-grep
 
 Tool to discover JavaScript and CSS dependency of HTML file.
 
