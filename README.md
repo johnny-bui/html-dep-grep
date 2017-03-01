@@ -17,6 +17,6 @@ html-dep-grep <file.html>
 
 ### API
 
-//TODO see check `index.js` to know how to use.
+//TODO check `index.js` to know how to use.
 
 [github https://github.com/johnny-bui/html-dep-grep](https://github.com/johnny-bui/html-dep-grep)
