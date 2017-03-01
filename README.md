@@ -1,20 +1,20 @@
-# html-dev-grep
+## html-dev-grep
 
 Tool to discover JavaScript and CSS dependency of HTML file.
 
-## Install
+### Install
 
 `npm install -g`
 
 you may need `sudo`.
 
-## Usage
+### Usage
 
 ```
 html-dep-grep <file.html>
 ```
 
 
-## API
+### API
 
-(TODO)
+(TODO), see check `index.js` to know how to use.

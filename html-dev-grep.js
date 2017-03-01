@@ -19,7 +19,7 @@ module.exports.GROUP_INDICATOR = GROUP_INDICATOR;
  * The default indicator to recognize the end of a group.
  * @constant
  * @type {RegExp}
- * @default <pre>/<!--\s*\/group\s*-->/</pre>
+ * @default <code>/&lt;!--\s*\/group\s*--&gt;/</code>
  * */
 module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
 
@@ -30,7 +30,7 @@ module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
  * object like:
  * <pre><code>[{'name': <given name>,
  *   'startLine': <line>, 'endLine': <line>,
- *   'html': <html>
+ *   'html': "html code goes here"
  *	}, .... ]</code></pre>
  *	Write your own function to handle the group.
  * @param {function} error a callback function to handel error by reading file. It 
@@ -85,20 +85,32 @@ module.exports.groupScriptFile = function (fileName, done, error, opt) {
 };
 
 /**
+ * resolve path of files in each group, this function creates for each
+ * group `g` in `groups` a new array attribute `js`, which contains the resolved
+ * path of the javascript, and a new array attribute `css`, for CSS files.
  * 
+ * @param {string} fileName the file name of the HTML file. 
+ * @param {array} groups an array of Element like 
+ * <pre><code>{"name":"the group name", 
+ * "startLine": startLine, "endLine": endLine,
+ * "html": "html code snippet, only script and link tag are recognized"}</code></pre>
  * */
-module.exports.grepTag = function (fileName, groups) {
+module.exports.resolvePath = function (fileName, groups) {
 	for (i = 0; i < groups.length; ++i) {
 		g = groups[i];
 		parseSnippet(g, fileName);
 	}
+	return groups;//for chain-call
 };
 
 /**
  * @private
+ * @param {object} groups an array of group, in which a new group is pushed. 
+ * @param {string} groupName the name of the group.
+ * @param {integer} startLine the start line  of the group in the being parsed html file.
  * */
 var startNewGroup = function (groups, groupName, startLine) {
-	var lastGroup = {'name': groupName, statLine: startLine, html: ''};
+	var lastGroup = {'name': groupName, startLine: startLine, html: ''};
 	console.log(`create new group named ${lastGroup.name}`);
 	groups.push(lastGroup);
 	return groups;
@@ -106,6 +118,7 @@ var startNewGroup = function (groups, groupName, startLine) {
 
 /**
  * @private
+ * 
  * */
 var setHtmlBlock = function (groups, html, endLine) {
 	var lastGroup = groups[groups.length - 1];
