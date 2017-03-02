@@ -1,3 +1,4 @@
+/* jshint node: true */
 'use strict';
 
 const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
@@ -21,13 +22,17 @@ module.exports.GROUP_INDICATOR = GROUP_INDICATOR;
  * */
 module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
 
-var GroupBlockLineConsumer = function (opt) {
+
+
+function GroupBlockLineConsumer (opt) {
 	this.groups = [];
 	this.currentBlock = "";
 	this.readingLine = 0;
 	this.inAGroup = false;
 	this.opt = pickupOption(opt);
 };
+
+
 
 GroupBlockLineConsumer.prototype.consumeLine = function (line) {
 	var trimedLine = line.trim();//assume default encoding is utf-8
@@ -46,13 +51,6 @@ GroupBlockLineConsumer.prototype.consumeLine = function (line) {
 	} else if (this.inAGroup) {
 		this.currentBlock += trimedLine;
 	}
-};
-
-/**
- * is called when parsing file finish.
- * */
-GroupBlockLineConsumer.prototype.done = function(){
-	
 };
 
 
@@ -118,9 +116,9 @@ FileReplaceLines.prototype.consumeLine = function(line){
 		}
 		//Reach the last line of the current group
 		if (this.readingLine === this.currentGroup.endLine){
-			this.buffer += (this.replacementGroup.length > this.currentBlockIdx 
-										? this.replacementGroup[this.currentBlockIdx] 
-										: "<!-- empty replacement -->" ) + "\n";
+			this.buffer += (this.replacementGroup.length > this.currentBlockIdx ?
+										this.replacementGroup[this.currentBlockIdx] :
+										"<!-- empty replacement -->" ) + "\n";
 			this.buffer += line + "\n";
 			++this.currentBlockIdx;
 			this.outOfBlock = true;

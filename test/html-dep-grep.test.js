@@ -1,6 +1,6 @@
 var rewire = require("rewire");
 var assert = require('assert'),
-				htmlGrep = rewire('../html-dev-grep');
+				htmlGrep = rewire('../html-dep-grep');
 
 describe('#htmlGrep.grepDepFile', function () {
 	it('groups script tag to array', function (fn) {

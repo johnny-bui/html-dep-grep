@@ -2,7 +2,7 @@
 
 const readline = require('readline');
 const fs = require('fs');
-const htmlGrep = require('./html-dev-grep');
+const htmlGrep = require('./html-dep-grep');
 
 var program = require('commander');
 
