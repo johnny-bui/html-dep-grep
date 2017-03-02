@@ -18,7 +18,7 @@ program
 
 
 var done = function(group){
-	var grepTag = htmlGrep.grepTag(fileName, group);
+	var grepTag = htmlGrep.resolvePath(fileName, group);
 	//console.log(group);
 	printDependency(fileName, group);
 };
@@ -39,6 +39,6 @@ var printDependency = function(fileName, group){
 		}
 	}
 };
-htmlGrep.groupScriptFile(fileName, done);
+htmlGrep.grepDepFile(fileName, done);
 
 

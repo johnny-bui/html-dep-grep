@@ -3,31 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const htmlparser = require("htmlparser2");
 
-var LineByLine = require('n-readlines');//for reading big file
+const LineByLine = require('n-readlines');//for reading big file
 
-const lazy = require('lazy');
-
-const GROUP_INDICATOR = /<!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*-->/;
-const END_GROUP_INDICATOR = /<!--\s*\/group\s*-->/;
-
-
-
-/**
- * The default indicator to recognize the begin of a group.
- * <code></code>
- * @constant
- * @type {RegExp}
- * @default <code>/&lt;!--\s*group\s+([a-zA-Z]+[a-zA-Z0-9]*)\s*--&gt;/</code>
- * */
-module.exports.GROUP_INDICATOR = GROUP_INDICATOR;
-
-/**
- * The default indicator to recognize the end of a group.
- * @constant
- * @type {RegExp}
- * @default <code>/&lt;!--\s*\/group\s*--&gt;/</code>
- * */
-module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
+const htmlConsumer = require('./html-consumer');
 
 /**
  * @param {string} fileName 
@@ -46,30 +24,16 @@ module.exports.END_GROUP_INDICATOR = END_GROUP_INDICATOR;
  */
 module.exports.grepDepFile = function (fileName, done, error, opt) {
 
-	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
-		const stream = fs.createReadStream(fileName);
-		const rl = readline.createInterface({
-			input: stream
-		});
-		var consumer = new LineConsumer(opt);
-		rl.on('line', function (line) {
-			try{
-				consumer.consumeLine(line);
-			}catch(ex){
-				rl.close();
-				error(ex);
-			}
-		});
-
-		rl.on('close', function () {
-			if (typeof done === "function") {
-				return done(consumer.groups);
-			}
-		});
-
-	} else {
-		throw new Error(`Cannot find path ${fileName} or it is not a file`);
+	var consumer = new htmlConsumer.GroupBlockLineConsumer(opt);
+	//Override the default implement.
+	if (typeof done === 'function'){
+		consumer.done = function(){
+			done(consumer.groups);
+		};
 	}
+	
+	readFileLineByLine(fileName, consumer, error);
+	
 };
 
 /**
@@ -85,16 +49,13 @@ module.exports.grepDepFile = function (fileName, done, error, opt) {
  * }</code></pre>
  * */
 module.exports.grepDepFileSync = function (fileName, opt) {
-	var effectivOption = pickupOption(opt);
-	var encoding = effectivOption.encoding;
+	var effectivOption = htmlConsumer.pickupOption(opt);
 	
 	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
-		//var line = null;
-		//var readingLine = 0;
 		var liner = new LineByLine(fileName);
-		var consumer = new LineConsumer(opt);
+		var consumer = new htmlConsumer.GroupBlockLineConsumer(opt);
 		while ((line = liner.next()) && line) {
-			var strLine = line.toString(encoding);//asume encoding is utf-8 by default
+			var strLine = line.toString(effectivOption.encoding);
 			consumer.consumeLine(strLine);
 		}
 		return consumer.groups;
@@ -102,6 +63,40 @@ module.exports.grepDepFileSync = function (fileName, opt) {
 		throw new Error(`Cannot find path ${fileName} or it is not a file`);
 	}
 };
+
+/**
+ * @param {string} fileName the file name. 
+ * @param {GroupBlockLineConsumer} lineConsumer 
+ * @param {function} error is called if an error happends by consuming 
+ * the line. 
+ * */
+var readFileLineByLine = function(fileName, lineConsumer, error){
+	if (fs.existsSync(fileName) && fs.statSync(fileName).isFile()) {
+		const stream = fs.createReadStream(fileName);
+		const rl = readline.createInterface({
+			input: stream
+		});
+		
+		rl.on('line', function (line) {
+			try{
+				lineConsumer.consumeLine(line);
+			}catch(ex){
+				rl.close();
+				error(ex);
+			}
+		});
+
+		rl.on('close', function () {
+			lineConsumer.done();
+		});
+
+	} else {
+		throw new Error(`Cannot find path ${fileName} or it is not a file`);
+	}
+};
+
+module.exports.readFileLineByLine = readFileLineByLine;
+
 
 
 /**
@@ -124,74 +119,6 @@ module.exports.resolvePath = function (fileName, groups) {
 	return groups;//for chain-call
 };
 
-var LineConsumer = function (opt) {
-	this.groups = [];
-	this.currentBlock = "";
-	this.readingLine = 0;
-	this.inAGroup = false;
-	this.opt = pickupOption(opt);
-};
-
-LineConsumer.prototype.consumeLine = function (line) {
-	var trimedLine = line.trim();//assume default encoding is utf-8
-	++this.readingLine;
-	if (trimedLine.match(this.opt.token)) {// start a new group
-		if (this.inAGroup) {
-			throw new Error(`${this.readingLine}: group not match`);
-		}
-		this.inAGroup = true;
-		var groupName = this.opt.token.exec(trimedLine)[1];
-		startNewGroup(this.groups, groupName, this.readingLine);
-	} else if (trimedLine.match(this.opt.endToken) && this.inAGroup) {
-		this.inAGroup = false;
-		setHtmlBlock(this.groups, this.currentBlock, this.readingLine);
-		this.currentBlock = "";
-	} else if (this.inAGroup) {
-		this.currentBlock += trimedLine;
-	}
-};
-
-var pickupOption = function (opt) {
-	return {
-		token: (opt ? (opt.token ? opt.token : GROUP_INDICATOR)
-						: GROUP_INDICATOR),
-		endToken: (opt ? (opt.endToken ? opt.endToken : END_GROUP_INDICATOR)
-						: END_GROUP_INDICATOR),
-		encoding: (opt ? (opt.encoding ? opt.encoding : 'utf-8')
-						: 'utf-8')
-	};
-};
-
-
-/**
- * @private
- * @param {object} groups an array of group, in which a new group is pushed. 
- * @param {string} groupName the name of the group.
- * @param {integer} startLine the start line  of the group in the being parsed html file.
- * */
-var startNewGroup = function (groups, groupName, startLine) {
-	var lastGroup = {'name': groupName, startLine: startLine, html: ''};
-	console.log(`create new group named ${lastGroup.name}`);
-	groups.push(lastGroup);
-	return groups;
-};
-
-/**
- * @private
- * @param {object} groups 
- * @param {string} html
- * @param {integer} endLine  
- * */
-var setHtmlBlock = function (groups, html, endLine) {
-	var lastGroup = groups[groups.length - 1];
-	if (html.length > 0) {
-		lastGroup['endLine'] = endLine;
-		lastGroup['html'] = html;
-	} else {
-		groups.pop();
-	}
-	return groups;
-};
 
 
 /**
@@ -203,17 +130,17 @@ var setHtmlBlock = function (groups, html, endLine) {
  * */
 var parseSnippet = function (g, fileName) {
 	const parentDir = path.dirname(fileName);
-	g['js'] = [];
-	g['css'] = [];
+	g.js = [];
+	g.css = [];
 	var parser = new htmlparser.Parser({
 		onopentag: function (name, attribs) {
 			if (name === "script" && attribs.src) {
-				g['js'].push(path.resolve(parentDir, attribs.src));
+				g.js.push(path.resolve(parentDir, attribs.src));
 			}
-			if (name === 'link'
-							&& attribs.rel === 'stylesheet'
-							&& attribs.href) {
-				g['css'].push(path.resolve(parentDir, attribs.href));
+			if (name === 'link'	&& 
+					attribs.rel === 'stylesheet' && 
+					attribs.href) {
+				g.css.push(path.resolve(parentDir, attribs.href));
 			}
 		},
 		onclosetag: function (tagname) {
@@ -221,7 +148,7 @@ var parseSnippet = function (g, fileName) {
 		}
 	}, {decodeEntities: true}
 	);
-	parser.write(g['html']);
+	parser.write(g.html);
 	parser.end();
 	return g;
 };

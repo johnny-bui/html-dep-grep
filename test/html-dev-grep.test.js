@@ -43,8 +43,8 @@ describe('#htmlGrep.grepDepFile', function () {
 		var fileName = "test/test.html";
 		htmlGrep.grepDepFile(fileName, function (groups) {
 			// the first script-block
-			const startLineOne = 21, endLineOne = 26,
-							startLineTwo = 31, endLineTwo = 37;
+			const startLineOne = 17, endLineOne = 22,
+							startLineTwo = 27, endLineTwo = 33;
 
 			if (groups[1].startLine === startLineOne && groups[1].endLine === endLineOne) {
 				if (groups[2].startLine === startLineTwo && groups[2].endLine === endLineTwo) {
@@ -154,8 +154,8 @@ describe('#htmlGrep.grepDepFileSync', function () {
 		var fileName = "test/test.html";
 		var groups = htmlGrep.grepDepFileSync(fileName);
 		// the first script-block
-		const startLineOne = 21, endLineOne = 26,
-						startLineTwo = 31, endLineTwo = 37;
+		const startLineOne = 17, endLineOne = 22,
+							startLineTwo = 27, endLineTwo = 33;
 
 		if (groups[1].startLine === startLineOne && groups[1].endLine === endLineOne) {
 			if (groups[2].startLine === startLineTwo && groups[2].endLine === endLineTwo) {
@@ -170,8 +170,6 @@ describe('#htmlGrep.grepDepFileSync', function () {
 	});
 });
 
-
-
 describe('#htmlGrep.grepDepFileSync', function () {
 	it('throws exception when groups do not match', function () {
 		var fileName = "test/invalid-group.html";
@@ -182,51 +180,5 @@ describe('#htmlGrep.grepDepFileSync', function () {
 			//TODO: write assert for exception here
 			console.log(e);
 		}
-	});
-});
-
-
-
-
-
-describe('GROUP_INDICATOR', function () {
-	it('matches with both spacing', function () {
-		assert("<!-- group a -->".match(htmlGrep.GROUP_INDICATOR));
-		assert("<!-- /group -->".match(htmlGrep.END_GROUP_INDICATOR));
-	});
-});
-
-describe('GROUP_INDICATOR', function () {
-	it('picks up the alphabetical name part', function () {
-		var name = htmlGrep.GROUP_INDICATOR.exec("<!-- group abcde -->")[1];
-		assert.equal(name, "abcde");
-	});
-});
-
-describe('GROUP_INDICATOR', function () {
-	it('picks up the numeric-alphabetical name part', function () {
-		var name = htmlGrep.GROUP_INDICATOR.exec("<!-- group c3p0 -->")[1];
-		assert.equal(name, "c3p0");
-	});
-});
-
-describe('GROUP_INDICATOR', function () {
-	it('matches with left spacing', function () {
-		assert("<!--   group  a2-->".match(htmlGrep.GROUP_INDICATOR));
-		assert("<!--   /group-->".match(htmlGrep.END_GROUP_INDICATOR));
-	});
-});
-
-describe('GROUP_INDICATOR', function () {
-	it('matches with right spacing', function () {
-		assert("<!--group aB1 -->".match(htmlGrep.GROUP_INDICATOR));
-		assert("<!--/group  -->".match(htmlGrep.END_GROUP_INDICATOR));
-	});
-});
-
-describe('GROUP_INDICATOR', function () {
-	it('matches with right spacing', function () {
-		assert.ok(!("<!--group _aB1 -->".match(htmlGrep.GROUP_INDICATOR)));
-
 	});
 });
