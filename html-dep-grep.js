@@ -95,7 +95,7 @@ var readFileLineByLine = function(fileName, lineConsumer, error){
 	}
 };
 
-module.exports.readFileLineByLine = readFileLineByLine;
+// module.exports.readFileLineByLine = readFileLineByLine;
 
 
 
