@@ -9,8 +9,9 @@
   ],
   "author": "Johnny Bui",
   "bin": {
-    "html-dev-grep": "./index.js"
+    "html-dev-grep": "./cli.js"
   },
+	"main":"./index.js",
   "repository": "https://github.com/johnny-bui/html-dep-grep",
   "contributors": [],
   "dependencies": {
@@ -25,8 +26,8 @@
     "mocha": "^3.2.0",
     "rewire": "^2.5.2"
   },
+	
   "scripts": {
-    "start": "node index.js",
 		"test": "mocha",
     "test:cover": "istanbul cover _mocha",
     "doc": "jsdoc *.js --destination gen-doc"
