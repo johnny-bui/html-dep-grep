@@ -27,7 +27,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "istanbul cover _mocha",
+		"test": "mocha",
+    "test:cover": "istanbul cover _mocha",
     "doc": "jsdoc *.js --destination gen-doc"
   }
 }

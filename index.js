@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const readline = require('readline');
+
 const fs = require('fs');
 const htmlGrep = require('./html-dep-grep');
 
